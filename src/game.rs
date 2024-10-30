@@ -1,10 +1,11 @@
 use crate::{
-    board::Board, config::Config, input::Tool, rendering::Camera, ui::UiState, utils::Vec2I,
+    board::Board, config::Config, input::Tool, notifications::NotificationState, notify_info,
+    rendering::Camera, ui::UiState, utils::Vec2I,
 };
 use fps_ticker::Fps;
 use log::info;
 use macroquad::prelude::*;
-use std::fs;
+use std::fs::{self, create_dir_all};
 
 pub struct Game {
     pub board: Board,
@@ -18,6 +19,7 @@ pub struct Game {
     pub ui_state: UiState,
     pub saves: Vec<String>,
     pub selected_tool: Tool,
+    pub notifications: NotificationState,
 }
 
 impl Game {
@@ -36,6 +38,7 @@ impl Game {
             ui_state: UiState::default(),
             saves: Self::get_saves(),
             selected_tool: Tool::Brush,
+            notifications: NotificationState::new(),
         }
     }
 
@@ -46,7 +49,7 @@ impl Game {
         loop {
             if self.frame_counter % 300 == 0 {
                 self.config.save();
-                info!("Saved config.");
+                notify_info!(self, "Saved config.");
             }
 
             if !self.paused {
@@ -61,6 +64,8 @@ impl Game {
             self.fps_ticker.tick();
             self.render_debug_info();
             self.update_ui();
+            self.notifications.tick();
+            self.notifications.draw(&self.config);
 
             if self.config.color_scheme_last_frame != self.config.color_scheme {
                 self.apply_color_scheme();
@@ -79,6 +84,7 @@ impl Game {
     }
 
     pub fn get_saves() -> Vec<String> {
+        create_dir_all(Board::saves_dir()).unwrap();
         let items = fs::read_dir(Board::saves_dir()).unwrap();
 
         items
@@ -103,17 +109,19 @@ impl Game {
 
         self.reload_saves();
 
-        info!("Saved board to {}", path);
+        notify_info!(self, "Saved board to {}", path);
         Ok(())
     }
 
     pub fn load_board(&mut self, name: String) -> Result<(), String> {
         let path = format!("{}/{}.json", Board::saves_dir(), name);
         println!("{}", path);
-        let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
+        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
         let board: Board = serde_json::from_str(&text).map_err(|e| e.to_string())?;
 
         self.board = board;
+
+        notify_info!(self, "Loaded board from {}", path);
 
         Ok(())
     }

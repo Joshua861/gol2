@@ -1,4 +1,8 @@
-use crate::{game::Game, input::Tool, utils::Vec2I};
+use crate::{
+    game::Game,
+    input::{Selection, Tool},
+    utils::Vec2I,
+};
 use clipline::Clipline;
 use macroquad::{
     input::show_mouse, math::Vec2, miniquad::window::screen_size, shapes::draw_rectangle,
@@ -57,7 +61,8 @@ impl Game {
             }
         }
 
-        let _ = self.draw_line();
+        self.draw_line();
+        self.draw_selection();
 
         {
             let Vec2I { x, y } = self.mouse_pos();
@@ -110,9 +115,30 @@ impl Game {
                     y,
                     self.tile_size(),
                     self.tile_size(),
-                    self.config.line_color.to_mq(),
+                    self.config.selection_color.to_mq(),
                 );
             }
+        }
+    }
+
+    fn draw_selection(&self) {
+        if let Some(Selection {
+            start,
+            end,
+            width,
+            height,
+        }) = self.get_selection()
+        {
+            let s = self.tile_size();
+            let (sx, sy) = self.board_to_screen(end.x, end.y);
+
+            draw_rectangle(
+                sx,
+                sy,
+                width as f32 * s,
+                height as f32 * s,
+                self.config.selection_color.to_mq(),
+            );
         }
     }
 

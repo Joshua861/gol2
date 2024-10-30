@@ -1,3 +1,5 @@
+use crate::notify_info;
+use crate::rules::{Rule, Rulestring, CUSTOM_RULES};
 use crate::{config::Config, utils::rand_bool};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
@@ -14,8 +16,8 @@ pub struct Board {
 
 #[derive(Clone, Copy)]
 pub struct Tile {
-    alive: bool,
-    heat: u8,
+    pub alive: bool,
+    pub heat: u8,
 }
 
 impl Tile {
@@ -25,7 +27,7 @@ impl Tile {
             heat: 0,
         }
     }
-    fn update_heat(&mut self, config: &Config) {
+    pub fn update_heat(&mut self, config: &Config) {
         if self.alive {
             if config.soft_heat {
                 self.heat = self.heat.saturating_add(config.soft_heat_amount);
@@ -48,9 +50,6 @@ impl Tile {
 }
 
 impl Board {
-    const SURVIVE_RULE: [bool; 9] = [false, false, true, true, false, false, false, false, false];
-    const SPAWN_RULE: [bool; 9] = [false, false, false, true, false, false, false, false, false];
-
     pub fn new(width: usize, height: usize) -> Self {
         Self {
             cells: vec![Tile::new(); width * height],
@@ -60,23 +59,30 @@ impl Board {
     }
 
     pub fn update(&mut self, config: &Config) {
-        let old = self.clone();
+        match &config.rule {
+            Rule::Rulestring(rule) => {
+                let old = self.clone();
 
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let (x, y) = (x as isize, y as isize);
-                let n = old.count_neighbors(x, y);
-                let is_alive = old.is_alive(x, y);
+                for y in 0..self.height {
+                    for x in 0..self.width {
+                        let (x, y) = (x as isize, y as isize);
+                        let n = old.count_neighbors(x, y);
+                        let is_alive = old.is_alive(x, y);
 
-                if is_alive {
-                    self.get_mut(x, y).alive = Self::SURVIVE_RULE[n];
-                } else {
-                    self.get_mut(x, y).alive = Self::SPAWN_RULE[n];
+                        if is_alive {
+                            self.get_mut(x, y).alive = rule.survive[n];
+                        } else {
+                            self.get_mut(x, y).alive = rule.spawn[n];
+                        }
+
+                        if config.enable_heat {
+                            self.get_mut(x, y).update_heat(config);
+                        }
+                    }
                 }
-
-                if config.enable_heat {
-                    self.get_mut(x, y).update_heat(config);
-                }
+            }
+            Rule::Custom(i) => {
+                CUSTOM_RULES[*i](self, config);
             }
         }
     }
@@ -98,21 +104,21 @@ impl Board {
         self.cells[self.xy_to_idx(x, y)]
     }
 
-    fn get_mut(&mut self, x: isize, y: isize) -> &mut Tile {
+    pub fn get_mut(&mut self, x: isize, y: isize) -> &mut Tile {
         let (x, y) = self.wrap_xy(x, y);
         let i = self.xy_to_idx(x, y);
 
         &mut self.cells[i]
     }
 
-    fn get_mut_u(&mut self, x: usize, y: usize) -> &mut Tile {
+    pub fn get_mut_u(&mut self, x: usize, y: usize) -> &mut Tile {
         let (x, y) = self.wrap_xy(x as isize, y as isize);
         let i = self.xy_to_idx(x, y);
 
         &mut self.cells[i]
     }
 
-    fn is_alive(&self, x: isize, y: isize) -> bool {
+    pub fn is_alive(&self, x: isize, y: isize) -> bool {
         self.get(x, y).alive
     }
 
@@ -149,6 +155,41 @@ impl Board {
         )? {
             let (x, y) = (x as usize, y as usize);
             self.set(x as isize, y as isize, alive);
+        }
+        Some(())
+    }
+
+    pub fn draw(&mut self, x: usize, y: usize, radius: usize, to: bool) {
+        let x = x as isize;
+        let y = y as isize;
+        let radius = radius as isize;
+        for dy in y - radius..=y + radius {
+            for dx in x - radius..=x + radius {
+                if self.is_inside(x, y) {
+                    let x2 = (dx - x).abs();
+                    let y2 = (dy - y).abs();
+                    if x2.pow(2) + y2.pow(2) <= radius.pow(2) {
+                        self.set(dx, dy, to);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn draw_line(
+        &mut self,
+        x0: usize,
+        y0: usize,
+        x1: usize,
+        y1: usize,
+        radius: usize,
+        alive: bool,
+    ) -> Option<()> {
+        for (x, y) in clipline::Clipline::new(
+            ((x0 as isize, y0 as isize), (x1 as isize, y1 as isize)),
+            ((0, 0), (self.width as isize - 1, self.height as isize - 1)),
+        )? {
+            self.draw(x as usize, y as usize, radius, alive);
         }
         Some(())
     }

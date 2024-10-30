@@ -8,7 +8,9 @@ mod config;
 mod debug_info;
 mod game;
 mod input;
+mod notifications;
 mod rendering;
+mod rules;
 mod ui;
 mod utils;
 

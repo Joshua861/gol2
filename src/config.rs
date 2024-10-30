@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};
 use std::io::Write;
 
+use crate::rules::{Rule, CONWAY};
 use crate::{
     color_schemes::{ColorScheme, DARK},
     utils::GColor,
@@ -18,7 +19,7 @@ pub struct Config {
     pub alive_color: GColor,
     pub hot_color: GColor,
     pub text_color: GColor,
-    pub line_color: GColor,
+    pub selection_color: GColor,
     pub tile_size: f32,
     pub heat_intensity: f32,
     pub highlight_color: GColor,
@@ -30,6 +31,8 @@ pub struct Config {
     pub color_scheme_last_frame: ColorScheme,
     pub pan_speed: f32,
     pub simulation_speed: usize,
+    pub rule: Rule,
+    pub brush_radius: usize,
 }
 
 impl Config {
@@ -73,6 +76,7 @@ impl Default for Config {
             soft_heat_amount: 50,
             simulation_speed: 1,
             pan_speed: 100.0,
+            brush_radius: 1,
 
             bg_color: GColor::from_hex(0x002B36),
             dead_color: GColor::from_hex(0x073642),
@@ -80,13 +84,15 @@ impl Default for Config {
             hot_color: GColor::from_hex(0x586E75),
             text_color: GColor::from_hex(0xFFFFFF),
             highlight_color: GColor::from_rgba(255, 255, 255, 50),
-            line_color: GColor::from_rgba(255, 255, 255, 50),
+            selection_color: GColor::from_rgba(255, 255, 255, 50),
 
             color_scheme: DARK,
             color_scheme_last_frame: DARK,
 
             soft_heat: false,
             enable_heat: true,
+
+            rule: CONWAY,
         }
     }
 }

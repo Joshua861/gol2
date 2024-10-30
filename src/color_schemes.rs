@@ -1,15 +1,17 @@
-use log::info;
-use serde::{Deserialize, Serialize};
-
 use crate::{
     game::Game,
-    gcolor_u8, tiny_str,
+    gcolor_u8, notify_info, tiny_str,
     utils::{GColor, TinyStr},
 };
+use serde::{Deserialize, Serialize};
 
 impl Game {
     pub fn apply_color_scheme(&mut self) {
-        info!("Applying color scheme: {}", self.config.color_scheme.name);
+        notify_info!(
+            self,
+            "Applying color scheme: {}",
+            self.config.color_scheme.name
+        );
 
         let color_scheme = self.config.color_scheme.clone();
         let config = &mut self.config;
@@ -20,7 +22,7 @@ impl Game {
         config.hot_color = color_scheme.hot_color;
         config.text_color = color_scheme.text_color;
         config.highlight_color = color_scheme.highlight_color;
-        config.line_color = color_scheme.line_color;
+        config.selection_color = color_scheme.line_color;
     }
 }
 
