@@ -104,6 +104,10 @@ impl Board {
         self.cells[self.xy_to_idx(x, y)]
     }
 
+    pub fn get_u(&self, x: usize, y: usize) -> Tile {
+        self.get(x as isize, y as isize)
+    }
+
     pub fn get_mut(&mut self, x: isize, y: isize) -> &mut Tile {
         let (x, y) = self.wrap_xy(x, y);
         let i = self.xy_to_idx(x, y);
@@ -122,7 +126,7 @@ impl Board {
         self.get(x, y).alive
     }
 
-    fn count_neighbors(&self, x: isize, y: isize) -> usize {
+    pub fn count_neighbors(&self, x: isize, y: isize) -> usize {
         let mut count = 0;
         for dy in -1..=1 {
             for dx in -1..=1 {

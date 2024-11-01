@@ -9,6 +9,7 @@ mod debug_info;
 mod game;
 mod input;
 mod notifications;
+mod recording;
 mod rendering;
 mod rules;
 mod ui;

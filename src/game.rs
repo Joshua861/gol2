@@ -1,11 +1,14 @@
 use crate::{
     board::Board, config::Config, input::Tool, notifications::NotificationState, notify_info,
-    rendering::Camera, ui::UiState, utils::Vec2I,
+    recording::Recording, rendering::Camera, ui::UiState, utils::Vec2I,
 };
 use fps_ticker::Fps;
 use log::info;
 use macroquad::prelude::*;
-use std::fs::{self, create_dir_all};
+use std::{
+    fs::{self, create_dir_all},
+    sync::{Arc, Mutex},
+};
 
 pub struct Game {
     pub board: Board,
@@ -20,6 +23,7 @@ pub struct Game {
     pub saves: Vec<String>,
     pub selected_tool: Tool,
     pub notifications: NotificationState,
+    pub recording: Option<Arc<Mutex<Recording>>>,
 }
 
 impl Game {
@@ -39,12 +43,13 @@ impl Game {
             saves: Self::get_saves(),
             selected_tool: Tool::Brush,
             notifications: NotificationState::new(),
+            recording: None,
         }
     }
 
     pub async fn run(&mut self) {
         self.board.randomize();
-        self.apply_color_scheme();
+        // self.apply_color_scheme();
 
         loop {
             if self.frame_counter % 300 == 0 {

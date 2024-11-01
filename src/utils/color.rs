@@ -1,3 +1,4 @@
+use image::{Rgb, Rgba};
 use macroquad::color::Color;
 use serde::{Deserialize, Serialize};
 
@@ -58,7 +59,7 @@ impl GColor {
         (self.a * 255.) as u8
     }
 
-    pub fn to_mq(&self) -> Color {
+    pub fn to_mq(self) -> Color {
         Color {
             r: self.r,
             g: self.g,
@@ -67,7 +68,7 @@ impl GColor {
         }
     }
 
-    pub fn to_rgba_arr(&self) -> [f32; 4] {
+    pub fn to_rgba_arr(self) -> [f32; 4] {
         [self.r, self.g, self.b, self.a]
     }
 
@@ -81,5 +82,9 @@ impl GColor {
         let b = (hex & 0xFF) as f32 / 255.;
 
         Self { r, g, b, a: 1. }
+    }
+
+    pub fn to_img(self) -> Rgba<u8> {
+        Rgba([self.r_u8(), self.g_u8(), self.b_u8(), self.a_u8()])
     }
 }
